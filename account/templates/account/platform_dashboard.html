@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Platform Dashboard</title>
+</head>
+<body>
+    <h1>Platform Admin Dashboard</h1>
+
+    <p>Welcome {{ request.user.username }}</p>
+
+    <a href="{% url 'account:create-company' %}">Create Company</a>
+
+</body>
+</html>
