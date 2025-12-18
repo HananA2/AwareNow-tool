@@ -2,23 +2,28 @@
 <link rel="stylesheet" href="{% static 'css/policy_acknow.css' %}">
 
 <div class="ack-page">
-
     <div class="ack-box">
 
-        <div class="ack-icon">✓</div>
+        <h2 class="policy-title">{{ policy.title }}</h2>
 
-        <h2 class="ack-title">
-            Acknowledgement Confirmed
-        </h2>
-
-        <p class="ack-message">
-            I have read and I acknowledged this policy successfully.
+        <p class="policy-description">
+            {{ policy.description }}
         </p>
 
-        <a href="{% url 'policies:policy_list' %}" class="ack-btn">
-            Back to Policies
-        </a>
+        <hr class="policy-divider">
+
+        {% if acknowledged %}
+            <div class="ack-success">
+                ✓ I have read and acknowledged this policy
+            </div>
+        {% else %}
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="ack-btn">
+                    I Acknowledge
+                </button>
+            </form>
+        {% endif %}
 
     </div>
-
 </div>

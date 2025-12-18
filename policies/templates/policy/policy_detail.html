@@ -5,27 +5,38 @@
 
     <div class="policy-box">
 
-        <!-- Policy Title -->
-        <h2 class="policy-title">
-            {{ policy.title }}
-        </h2>
+        <h2 class="policy-title">{{ policy.title }}</h2>
 
-        <!-- Policy Description -->
-        <p class="policy-description">
-            {{ policy.description }}
-        </p>
+        <p class="policy-description">{{ policy.description }}</p>
 
         <hr class="policy-divider">
 
-        <!-- Acknowledge Section -->
-        <form method="post" action="{% url 'policies:policy_acknowledge' %}">
-            {% csrf_token %}
-            <input type="hidden" name="policy_id" value="{{ policy.id }}">
+        <!-- Capsule -->
+        <span class="acknowledged-badge">User acknowledged</span>
 
-            <button type="submit" class="ack-btn">
-                I Acknowledge
-            </button>
-        </form>
+        <!-- White Box -->
+        <div class="acknowledged-box">
+
+            {% for ack in acknowledgements %}
+                <div class="ack-line">
+                    <span class="label">Name:</span>
+                    <span class="value">{{ ack.user.username }}</span>
+
+                    <span class="v-divider"></span>
+
+                    <span class="label">Email:</span>
+                    <span class="value">{{ ack.user.email }}</span>
+
+                    <span class="v-divider"></span>
+
+                    <span class="label">Department:</span>
+                    <span class="value">{{ ack.user.department }}</span>
+                </div>
+            {% empty %}
+                <p class="ack-empty">No users acknowledged yet.</p>
+            {% endfor %}
+
+        </div>
 
     </div>
 

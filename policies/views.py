@@ -14,11 +14,15 @@ def policy_list(request):
         'policies': policies
     })
 
-
 def policy_detail(request, id):
     policy = get_object_or_404(Policy, id=id)
+
+    
+    acknowledgements = policy.acknowledgements.select_related('user')
+
     return render(request, 'policy/policy_detail.html', {
-        'policy': policy
+        'policy': policy,
+        'acknowledgements': acknowledgements
     })
 
 
@@ -49,5 +53,18 @@ def create_policy(request):
     })
 
 
-def policy_acknowledge(request):
-    return render(request, 'policy/policy_acknow.html')
+def policy_acknowledge(request, id):
+    policy = get_object_or_404(Policy, id=id)
+
+    acknowledged = False
+
+    if request.method == 'POST':
+        acknowledged = True
+        # هنا لاحقًا زميلاتك بيضيفون الحفظ في PolicyAcknowledgement
+
+    return render(request, 'policy/policy_acknow.html', {
+        'policy': policy,
+        'acknowledged': acknowledged
+    })
+
+
