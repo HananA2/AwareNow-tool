@@ -1,0 +1,43 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/policy_detail.css' %}">
+
+<div class="policy-detail-page">
+
+    <div class="policy-box">
+
+        <h2 class="policy-title">{{ policy.title }}</h2>
+
+        <p class="policy-description">{{ policy.description }}</p>
+
+        <hr class="policy-divider">
+
+        <!-- Capsule -->
+        <span class="acknowledged-badge">User acknowledged</span>
+
+        <!-- White Box -->
+        <div class="acknowledged-box">
+
+            {% for ack in acknowledgements %}
+                <div class="ack-line">
+                    <span class="label">Name:</span>
+                    <span class="value">{{ ack.user.username }}</span>
+
+                    <span class="v-divider"></span>
+
+                    <span class="label">Email:</span>
+                    <span class="value">{{ ack.user.email }}</span>
+
+                    <span class="v-divider"></span>
+
+                    <span class="label">Department:</span>
+                    <span class="value">{{ ack.user.department }}</span>
+                </div>
+            {% empty %}
+                <p class="ack-empty">No users acknowledged yet.</p>
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+</div>

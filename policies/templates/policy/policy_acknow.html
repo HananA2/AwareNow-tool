@@ -1,0 +1,29 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/policy_acknow.css' %}">
+
+<div class="ack-page">
+    <div class="ack-box">
+
+        <h2 class="policy-title">{{ policy.title }}</h2>
+
+        <p class="policy-description">
+            {{ policy.description }}
+        </p>
+
+        <hr class="policy-divider">
+
+        {% if acknowledged %}
+            <div class="ack-success">
+                ✓ I have read and acknowledged this policy
+            </div>
+        {% else %}
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="ack-btn">
+                    I Acknowledge
+                </button>
+            </form>
+        {% endif %}
+
+    </div>
+</div>
