@@ -57,7 +57,7 @@ def company_dashboard(request):
     total_employees = User.objects.filter(company=company, is_disabled=False, role='EMPLOYEE').count()
     
     # Get assigned courses for this company
-    assigned_courses = CompanyCourseAssignment.objects.filter(company=company).select_related('course')
+    assigned_courses = CompanyCourseAssignment.objects.filter(company=company, course__is_active=True).select_related('course')
     total_assigned_courses = assigned_courses.count()
     
     # Employee progress statistics
@@ -81,34 +81,46 @@ def company_dashboard(request):
         course = assignment.course
         
         # Find which groups have this course assigned
-        assigned_groups = []
-        for group in user_groups:
-            # Check if any user in this group is assigned to this course
-            users_in_group = group.users.filter(is_disabled=False, role='EMPLOYEE')
-            if users_in_group.exists():
-                # Check if any of these users have this course assigned
-                for user in users_in_group:
-                    try:
-                        if hasattr(user, 'employee_profile'):
-                            if EmployeeCourseAssignment.objects.filter(
-                                employee=user.employee_profile,
-                                course=course
-                            ).exists():
-                                assigned_groups.append(group)
-                                break
-                    except EmployeeProfile.DoesNotExist:
-                        continue
+        assigned_groups = CompanyCourseGroup.objects.filter(
+            company=company,
+            courses=course
+        )
+
+        # assigned_groups = []
+        # for group in user_groups:
+        #     # Check if any user in this group is assigned to this course
+        #     users_in_group = group.users.filter(is_disabled=False, role='EMPLOYEE')
+        #     if users_in_group.exists():
+        #         # Check if any of these users have this course assigned
+        #         for user in users_in_group:
+        #             try:
+        #                 if hasattr(user, 'employee_profile'):
+        #                     if EmployeeCourseAssignment.objects.filter(
+        #                         employee=user.employee_profile,
+        #                         course=course
+        #                     ).exists():
+        #                         assigned_groups.append(group)
+        #                         break
+        #             except EmployeeProfile.DoesNotExist:
+        #                 continue
         
         # Get employee assignment stats for this course
         course_assignments = EmployeeCourseAssignment.objects.filter(
             employee__user__company=company,
             course=course
         )
-        
+        assigned_group_names = set(
+            CompanyCourseGroup.objects.filter(
+                company=company,
+                courses=course
+            ).values_list('name', flat=True)
+        )
+
         courses_with_groups.append({
             'assignment': assignment,
             'course': course,
             'assigned_groups': assigned_groups,
+            'assigned_group_names': assigned_group_names,
             'total_employees_assigned': course_assignments.count(),
             'completed_count': course_assignments.filter(status='completed').count(),
         })
@@ -136,7 +148,7 @@ def assign_course_to_group(request, course_id):
         return redirect("account:platform-login")
     
     company = request.user.company
-    course = get_object_or_404(Course, id=course_id)
+    course = get_object_or_404(Course, id=course_id, is_active=True)
     
     # Check if course is assigned to this company
     if not CompanyCourseAssignment.objects.filter(company=company, course=course).exists():
@@ -154,9 +166,9 @@ def assign_course_to_group(request, course_id):
                 # IMPORTANT: Create or get the CompanyCourseGroup first
                 company_course_group, created = CompanyCourseGroup.objects.get_or_create(
                     company=company,
-                    name=f"{course.title} - {group.name}",
+                    name=group.name,
                     defaults={
-                        'description': f"Course '{course.title}' assigned to group '{group.name}'",
+                        # 'description': f"Course '{course.title}' assigned to group '{group.name}'",
                         'created_by': request.user
                     }
                 )
@@ -284,7 +296,7 @@ def employee_dashboard(request):
         
         # Get all course assignments for this employee
         assignments = EmployeeCourseAssignment.objects.filter(
-            employee=employee_profile
+            employee=employee_profile, course__is_active=True
         ).select_related('course', 'course__category').order_by('-assigned_at')
         
         # Calculate statistics
@@ -323,7 +335,7 @@ def view_course(request, course_id):
     
     try:
         employee_profile = EmployeeProfile.objects.get(user=request.user)
-        course = get_object_or_404(Course, id=course_id)
+        course = get_object_or_404(Course, id=course_id, is_active=True)
         
         # Get or create assignment
         assignment, created = EmployeeCourseAssignment.objects.get_or_create(

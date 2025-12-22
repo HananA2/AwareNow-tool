@@ -19,61 +19,6 @@
         </a>
     </div>
 
-    <!-- Course Cards Section -->
-    <div class="mb-5">
-        <h5 class="fw-semibold mb-3">Courses Overview</h5>
-
-        <div class="row">
-            {% for course in courses|slice:":6" %}
-            <div class="col-md-4 mb-3">
-                <div class="card border-0 shadow-sm p-3 h-100">
-                    <div class="d-flex align-items-start mb-2">
-                        {% if course.thumbnail %}
-                        <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}" 
-                             class="rounded me-3" width="60" height="60">
-                        {% else %}
-                        <div class="bg-light rounded d-flex align-items-center justify-content-center me-3" 
-                             style="width: 60px; height: 60px;">
-                            <i class="fas fa-video text-muted"></i>
-                        </div>
-                        {% endif %}
-                        <div>
-                            <h6 class="fw-bold mb-1">{{ course.title }}</h6>
-                            <small class="text-muted">
-                                {{ course.created_at|date:"M d, Y" }}
-                            </small>
-                        </div>
-                    </div>
-
-                    <p class="text-muted mb-2 small">
-                        {{ course.brief_description|truncatechars:80 }}
-                    </p>
-
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="badge bg-light text-dark">
-                            {{ course.video_duration_minutes }} min
-                        </span>
-                        <span class="badge {% if course.is_published %}bg-success{% else %}bg-secondary{% endif %}">
-                            {% if course.is_published %}Published{% else %}Draft{% endif %}
-                        </span>
-                    </div>
-                </div>
-            </div>
-            {% empty %}
-            <div class="col-12">
-                <div class="card border-0 shadow-sm p-5 text-center">
-                    <p class="text-muted mb-0">No courses available yet</p>
-                    <a href="{% url 'courses:create_course' %}" class="btn btn-dark mt-3">
-                        Create Your First Course
-                    </a>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-
-
-
     <!-- Courses Table Section -->
     <div>
         <!-- Courses Header + Filters -->
@@ -114,6 +59,7 @@
                         <th>Created By</th>
                         <th>Created At</th>
                         <th>Status</th>
+                        <th class="text-end">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -139,25 +85,164 @@
                         <td>{{ course.created_by.username|default:"System" }}</td>
                         <td>{{ course.created_at|date:"Y-m-d" }}</td>
                         <td>
-                            {% if course.is_published %}
-                                <span class="badge bg-success">Published</span>
-                            {% else %}
+                            {% if not course.is_published %}
                                 <span class="badge bg-secondary">Draft</span>
+
+                            {% elif course.is_published and not course.is_active %}
+                                <span class="badge bg-warning text-dark">Deactivated</span>
+
+                            {% else %}
+                                <span class="badge bg-success">Published</span>
                             {% endif %}
+                            
                         </td>
+                        <td class="text-end">
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-light"
+                                        data-bs-toggle="dropdown"
+                                        aria-expanded="false">
+                                    ⋮
+                                </button>
+                        
+                                <ul class="dropdown-menu dropdown-menu-end">
+                        
+                                    <!-- Draft → Edit -->
+                                    {% if not course.is_published %}
+                                    <li>
+                                        <a class="dropdown-item"
+                                           href="{% url 'courses:edit_course' course.id %}">
+                                            Edit
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                        
+                                    <!-- Published → Deactivate -->
+                                    {% if course.is_published and course.is_active %}
+                                    <!-- Edit -->
+                                    <li>
+                                        <a class="dropdown-item"
+                                        href="{% url 'courses:edit_course' course.id %}">
+                                        Edit
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item"
+                                           href="#"
+                                           data-bs-toggle="modal"
+                                           data-bs-target="#viewCompaniesModal"
+                                           data-course-id="{{ course.id }}"
+                                           data-course-title="{{ course.title }}">
+                                          View Companies
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item text-danger"
+                                           href="{% url 'courses:deactivate_course' course.id %}">
+                                            Deactivate
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                        
+                                    <!-- Deactivated → Activate -->
+                                    {% if not course.is_active %}
+                                    <li>
+                                        <a class="dropdown-item text-success"
+                                           href="{% url 'courses:activate_course' course.id %}">
+                                            Activate
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                        
+                                </ul>
+                            </div>
+                        </td>    
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="text-center text-muted">
+                        <td colspan="7" class="text-center text-muted">
                             No courses found
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+
         </div>
         
     </div>
 
+    <div class="modal fade" id="viewCompaniesModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Published Companies</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+      
+            <div class="modal-body">
+              <!-- <h6 id="modalCourseTitle" class="mb-3"></h6> -->
+              <p class="text-muted mb-2 small" id="companiesCount"></p>
+              <ul id="companiesList" class="list-group list-group-flush">
+                <li class="list-group-item text-muted">Loading...</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const modal = document.getElementById("viewCompaniesModal");
+
+        modal.addEventListener("show.bs.modal", function (event) {
+
+        const button = event.relatedTarget;
+        if (!button) return;
+
+        const courseId = button.getAttribute("data-course-id");
+
+        const countEl = document.getElementById("companiesCount");
+        const listEl  = document.getElementById("companiesList");
+
+        // reset
+        countEl.textContent = "";
+        listEl.innerHTML = `<li class="list-group-item text-muted">Loading...</li>`;
+
+        fetch(`/courses/platform-admin/courses/${courseId}/companies/`)
+            .then(res => res.json())
+            .then(data => {
+
+            listEl.innerHTML = "";
+            countEl.textContent = `${data.companies.length} Companies`;
+
+            if (data.companies.length === 0) {
+                listEl.innerHTML = `
+                <li class="list-group-item text-muted">
+                    No companies assigned
+                </li>`;
+            } else {
+                data.companies.forEach(name => {
+                listEl.innerHTML += `
+                    <li class="list-group-item">${name}</li>`;
+                });
+            }
+            })
+            .catch(() => {
+            listEl.innerHTML = `
+                <li class="list-group-item text-danger">
+                Failed to load companies
+                </li>`;
+            });
+
+        });
+
+        });
+
+</script>
+    
+    
 {% endblock %}

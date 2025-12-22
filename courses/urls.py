@@ -9,5 +9,14 @@ urlpatterns = [
     path('courses-dashboard/', views.courses_dashboard, name='courses_dashboard'),
     path('platform-admin/courses/create/', views.create_course, name='create_course'),
     path('platform-admin/courses/<int:course_id>/edit/', views.edit_course, name='edit_course'),
-    path('platform-admin/courses/<int:course_id>/assign/', views.assign_course_to_companies, name='assign_course_to_companies'),
+    # path('platform-admin/courses/<int:course_id>/assign/', views.assign_course_to_companies, name='assign_course_to_companies'),
+    path('courses/<int:course_id>/deactivate/', views.deactivate_course, name='deactivate_course'),
+    path('courses/<int:course_id>/activate/', views.activate_course, name='activate_course'),
+    path(
+    'platform-admin/courses/<int:course_id>/companies/',
+    views.course_companies_view,
+    name='course_companies_view'
+    ),
+
+
 ]
