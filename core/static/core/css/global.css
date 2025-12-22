@@ -98,4 +98,113 @@ body{
 }
 
 
-  
+/* ===== Dashboard ===== */
+
+.btn-brand {
+  background: var(--brand);
+  color: #fff;
+  border: none;
+}
+
+.btn-brand:hover {
+  background: var(--brand-dark);
+  color: #fff;
+}
+
+/* Filled filter button */
+.btn-filter {
+  background: var(--brand);
+  color: #fff;
+  border: none;
+}
+
+.btn-filter:hover {
+  background: var(--brand-dark);
+  color: #fff;
+}
+
+/* Overview cards */
+.dashboard-overview {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 5px 5px rgba(108, 108, 108, 0.08);
+}
+
+.overview-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 0.70rem;
+  box-shadow: 0 2px 2px rgba(108, 108, 108, 0.08);
+
+}
+
+.price-text {
+  font-size: 1.17rem;
+  font-weight: 700;
+  color: var(--brand);
+}
+
+/* Badges (soft style) */
+.badge-soft-success {
+  background: rgba(16, 185, 129, 0.12);
+  color: #065f46;
+}
+
+.badge-soft-secondary {
+  background: rgba(107, 114, 128, 0.12);
+  color: #374151;
+}
+
+.badge-soft-danger {
+  background: rgba(220, 38, 38, 0.12);
+  color: #7f1d1d;
+}
+
+/* ===== Table polish (KEY FIX) ===== */
+.table thead th {
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #6b7280;
+  border-bottom: 1px solid var(--border);
+}
+
+.table td {
+  font-size: 0.85rem;
+  color: var(--text);
+  padding: 0.9rem 0.75rem;
+}
+
+.table tbody tr:hover {
+  background: #f9fafb;
+}
+
+/* ===== Table Card ===== */
+/* .card .table {
+  margin-bottom: 0;
+} */
+
+/* Soft table header */
+.table-head-soft th {
+  background: #f8fafc;   /* رمادي فاتح جدًا */
+  border-bottom: 1px solid var(--border);
+}
+
+/* Keep header subtle */
+.table-head-soft th:first-child {
+  border-top-left-radius: 12px;
+}
+
+.table-head-soft th:last-child {
+  border-top-right-radius: 12px;
+}
+
+
+/* Soft divider inside cards */
+.card-divider {
+  border: none;
+  background: var(--border);
+}
