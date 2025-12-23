@@ -66,6 +66,9 @@ class CampaignRecipient(models.Model):
     clicked_at = models.DateTimeField(null=True, blank=True)
     fallen_at = models.DateTimeField(null=True, blank=True)
 
+    class Meta:
+        unique_together = ("campaign", "email")
+
     def __str__(self):
         return f"{self.email} ({self.campaign_id})"
 
@@ -77,3 +80,40 @@ class CampaignRecipient(models.Model):
 
     @property
     def fallen(self): return self.fallen_at is not None
+
+class PhishingEvent(models.Model):
+    class EventType(models.TextChoices):
+        OPEN = "open", "Open"
+        CLICK = "click", "Click"
+        FALL = "fall", "Fall"
+
+    id = models.BigAutoField(primary_key=True)
+
+    campaign = models.ForeignKey(
+        "PhishingCampaign",
+        on_delete=models.CASCADE,
+        related_name="events"
+    )
+
+    recipient = models.ForeignKey(
+        "CampaignRecipient",
+        on_delete=models.CASCADE,
+        related_name="events"
+    )
+
+    event_type = models.CharField(max_length=10, choices=EventType.choices)
+
+    target_url = models.URLField(max_length=1000, blank=True)   # للـ click
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=512, blank=True)
+
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["campaign", "event_type", "created_at"]),
+            models.Index(fields=["recipient", "created_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.campaign.title} | {self.recipient.email} | {self.event_type}"

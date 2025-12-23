@@ -26,17 +26,31 @@
       <span class="badge rounded-pill text-bg-dark">Active</span>
     </div>
 
-    {% if active_campaign %}
-      <div class="ph-active-card">
-        <h3 class="mb-2">{{ active_campaign.title }}</h3>
-        <p class="text-muted mb-0">
-          Group: {{ active_campaign.user_group|default:"-" }} · Sender: {{ active_campaign.sender|default:"-" }} ·
-          Date: {{ active_campaign.scheduled_date|default:"-" }}
-        </p>
+    {% if active_campaigns %}
+    {% for c in active_campaigns %}
+      <div class="ph-active-card mb-3">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <div class="ph-card-title">{{ c.title }}</div>
+            <div class="ph-pagination-hint">
+              Group: {{ c.user_group }} • Sender: {{ c.sender }} • Date: {{ c.scheduled_date|default:"-" }}
+            </div>
+          </div>
+          <div class="d-flex gap-2 align-items-center">
+            <span class="badge bg-dark">Published</span>
+          
+            <a href="{% url 'campaigns:publish-send' c.id %}"
+            class="btn btn-sm btn-outline-dark"
+            onclick="return confirm('Publish & send phishing emails?')">
+            Send Emails
+           </a>         
+          </div>
+        </div>
       </div>
-    {% else %}
-      <div class="ph-empty">No active campaigns yet.</div>
-    {% endif %}
+    {% endfor %}
+  {% else %}
+    <div class="ph-empty">No active (published) campaigns.</div>
+  {% endif %}  
   </div>
 
   <!-- Completed -->
@@ -47,21 +61,26 @@
     </div>
 
     <div class="ph-grid">
+      {% if completed_campaigns %}
       {% for c in completed_campaigns %}
-        <div class="ph-card">
-          <h4 class="ph-card-title">{{ c.title }}</h4>
-          <p class="ph-card-text">
-            {{ c.user_group|default:"No group" }}<br>
-            {{ c.sender|default:"No sender" }}
-          </p>
-          <div class="ph-card-footer">
-            <span class="text-muted small">{{ c.scheduled_date|default:"-" }}</span>
-            <button class="btn btn-sm btn-outline-secondary" type="button">Download</button>
+        <div class="ph-active-card mb-3">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <div class="ph-card-title">{{ c.title }}</div>
+              <div class="ph-pagination-hint">
+                Group: {{ c.user_group }} •
+                Sender: {{ c.sender }} •
+                Date: {{ c.scheduled_date|default:"-" }}
+              </div>
+            </div>
+    
+            <span class="badge bg-secondary">Completed</span>
           </div>
         </div>
-      {% empty %}
-        <div class="ph-empty">No completed campaigns.</div>
       {% endfor %}
+    {% else %}
+      <div class="ph-empty">No completed campaigns.</div>
+    {% endif %}     
     </div>
   </div>
 </div>
