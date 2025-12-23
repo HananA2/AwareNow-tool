@@ -9,7 +9,7 @@ class CourseForm(forms.ModelForm):
         fields = [
             'title', 'brief_description', 'category', 'thumbnail',
             'video_url', 'video_duration_minutes', 'visibility',
-            'points_reward', 'is_published'
+            'is_published'
         ]
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
@@ -18,7 +18,7 @@ class CourseForm(forms.ModelForm):
                 'rows': 3,
                 'placeholder': 'Enter brief description (max 2048 chars)'
             }),
-            # 'category': forms.Select(attrs={'class': 'form-control'}),
+            'category': forms.Select(attrs={'class': 'form-select'}),
             'thumbnail': forms.ClearableFileInput(attrs={'class': 'form-control'}),
             'video_url': forms.URLInput(attrs={
                 'class': 'form-control',

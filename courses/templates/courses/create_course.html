@@ -17,13 +17,13 @@
     </div>
 
     <!-- ✅ Success Message Only -->
-    {% if messages %}
+    <!-- {% if messages %}
         {% for message in messages %}
             <div class="alert alert-{{ message.tags }} mb-3">
                 {{ message }}
             </div>
         {% endfor %}
-    {% endif %}
+    {% endif %} -->
 
     <form method="post" class="row g-4" enctype="multipart/form-data">
         {% csrf_token %}
@@ -64,6 +64,14 @@
 
                     <!-- Category & Thumbnail -->
                     <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small">Category</label>
+                            {{ form.category }}
+                            {% for error in form.category.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
                         <!-- <div class="col-md-6 mb-3">
                             <label class="form-label small">Category</label>
                             <select
@@ -145,75 +153,147 @@
         <!-- ================= Course Settings ================= -->
         <div class="col-12">
             <div class="card border-0 shadow-sm">
-                <div class="card-body p-4">
-                    <h5 class="fw-semibold mb-3">Course Settings</h5>
-
-                    <!-- Visibility & Points -->
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label small">Visibility</label>
-                            <select
-                                name="visibility"
-                                class="form-select {% if form.visibility.errors %}is-invalid{% endif %}"
-                            >
-                                {% for option in form.visibility.field.choices %}
-                                    <option value="{{ option.0 }}" 
-                                        {% if form.visibility.value == option.0|stringformat:"s" %}selected{% endif %}>
-                                        {{ option.1 }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                            {% for error in form.visibility.errors %}
-                                <div class="invalid-feedback">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label small">Points Reward</label>
-                            <input
-                                type="number"
-                                name="points_reward"
-                                value="{{ form.points_reward.value|default:'10' }}"
-                                class="form-control {% if form.points_reward.errors %}is-invalid{% endif %}"
-                                min="0"
-                            >
-                            {% for error in form.points_reward.errors %}
-                                <div class="invalid-feedback">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                    </div>
-
-                    <!-- Publish Checkbox -->
-                    <div class="form-check">
-                        <input
-                            type="checkbox"
-                            name="is_published"
-                            class="form-check-input {% if form.is_published.errors %}is-invalid{% endif %}"
-                            id="is_published"
-                            {% if form.is_published.value %}checked{% endif %}
-                        >
-                        <label class="form-check-label small" for="is_published">
-                            Publish Immediately
-                        </label>
-                        {% for error in form.is_published.errors %}
-                            <div class="invalid-feedback d-block">{{ error }}</div>
-                        {% endfor %}
-                    </div>
-
+              <div class="card-body p-4">
+                <h5 class="fw-semibold mb-3">Course Publishing</h5>
+          
+                <!-- Draft -->
+                <div class="form-check mb-3">
+                  <input class="form-check-input"
+                         type="radio"
+                         name="visibility"
+                         id="draft"
+                         value="private"
+                         {% if form.instance.is_published %}disabled{% endif %}
+                         {% if not form.instance.is_published %}checked{% endif %}>
+                  <label class="form-check-label fw-medium text-muted" for="draft">
+                    Save as Draft
+                  </label>
+                  <div class="text-muted small">
+                    Course will not be visible to any company.
+                  </div>
                 </div>
+          
+                <!-- Publish All -->
+                <div class="form-check mb-3">
+                  <input class="form-check-input"
+                         type="radio"
+                         name="visibility"
+                         id="publish_all"
+                         value="global"
+                         {% if form.instance.is_published and form.instance.visibility == 'global' %}checked{% endif %}>
+                  <label class="form-check-label fw-medium" for="publish_all">
+                    Publish to all companies
+                  </label>
+                </div>
+          
+                <!-- Publish Specific -->
+                <div class="form-check">
+                  <input class="form-check-input"
+                         type="radio"
+                         name="visibility"
+                         id="publish_specific"
+                         value="specific"
+                         {% if form.instance.is_published and form.instance.visibility == 'specific' %}checked{% endif %}>
+                  <label class="form-check-label fw-medium" for="publish_specific">
+                    Publish to specific companies
+                  </label>
+                </div>
+          
+              </div>
             </div>
         </div>
 
+
+        <div id="specificCompanies" class="mt-4 collapse">
+            <div class="card border">
+              <div class="card-body">
+                <h6 class="fw-semibold mb-3">Select Companies</h6>
+          
+                {% for company in all_companies %}
+                  <div class="form-check">
+                    <input class="form-check-input"
+                           type="checkbox"
+                           name="companies"
+                           value="{{ company.id }}">
+                    <label class="form-check-label">
+                      {{ company.name }}
+                    </label>
+                  </div>
+                {% endfor %}
+          
+              </div>
+            </div>
+        </div>
+          
+          
+        <!-- <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                  <h5 class="fw-semibold mb-3">Course Publishing</h5>
+              
+                  <div class="form-check mb-3">
+                    <input class="form-check-input"
+                           type="radio"
+                           name="visibility"
+                           id="draft"
+                           value="private"
+                           checked>
+                    <label class="form-check-label fw-medium" for="draft">
+                      Save as Draft
+                    </label>
+                    <div class="text-muted small">
+                      Course will not be visible to any company.
+                    </div>
+                  </div>
+              
+                  <div class="form-check mb-3">
+                    <input class="form-check-input"
+                           type="radio"
+                           name="visibility"
+                           id="publish_all"
+                           value="global">
+                    <label class="form-check-label fw-medium" for="publish_all">
+                      Publish to all companies
+                    </label>
+                    <div class="text-muted small">
+                      Course will be available to all active companies.
+                    </div>
+                  </div>
+              
+                  <div class="form-check">
+                    <input class="form-check-input"
+                           type="radio"
+                           name="visibility"
+                           id="publish_specific"
+                           value="specific">
+                    <label class="form-check-label fw-medium" for="publish_specific">
+                      Publish to specific companies
+                    </label>
+                    <div class="text-muted small">
+                      You will choose companies in the next step.
+                    </div>
+                  </div>
+                </div>
+              </div>                     
+        </div> -->
+
         <!-- Submit -->
-        <div class="col-12 d-flex justify-content-end gap-2">
-            <button type="submit" name="save" class="btn btn-dark px-4">
-                Save Course
-            </button>
-            <button type="submit" name="save_and_assign" class="btn btn-success px-4">
-                Save & Assign
+        <div class="col-12 d-flex justify-content-end">
+            <button type="submit" class="btn btn-brand px-5">
+              Save Course
             </button>
         </div>
 
     </form>
 </div>
+
+<script>
+    const specificRadio = document.getElementById('publish_specific');
+    const collapse = document.getElementById('specificCompanies');
+  
+    specificRadio.addEventListener('change', () => {
+      collapse.classList.add('show');
+    });
+</script>
+  
 {% endblock %}

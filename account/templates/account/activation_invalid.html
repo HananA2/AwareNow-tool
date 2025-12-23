@@ -1,0 +1,35 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Activation Invalid</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    {% load static %}
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+</head>
+<body class="bg-light d-flex align-items-center justify-content-center vh-100">
+
+<div class="card shadow-sm border-0" style="max-width: 420px; width: 100%;">
+    <div class="card-body text-center p-4">
+
+        <div class="mb-3">
+            <span class="display-6 text-danger">⚠️</span>
+        </div>
+
+        <h5 class="fw-bold mb-2">Activation Link Invalid</h5>
+
+        <p class="text-muted small mb-4">
+            This activation link is either expired or already used.
+        </p>
+
+        <a href="{% url 'account:platform-login' %}" class="btn btn-dark w-100">
+            Go to Login
+        </a>
+
+    </div>
+</div>
+
+</body>
+</html>

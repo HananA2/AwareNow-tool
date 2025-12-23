@@ -247,7 +247,7 @@
                                                 <small class="text-muted d-block mb-2">Quick Assign:</small>
                                                 <div class="d-flex flex-wrap gap-2">
                                                     {% for group in user_groups %}
-                                                        {% if group not in item.assigned_groups %}
+                                                        {% if group.name not in item.assigned_group_names %}
                                                         <button type="button" 
                                                                 class="btn btn-sm btn-outline-primary quick-assign-btn"
                                                                 data-group-id="{{ group.id }}"
@@ -265,7 +265,7 @@
                                                 <small class="text-muted d-block mb-2">Available User Groups:</small>
                                                 <div class="row">
                                                     {% for group in user_groups %}
-                                                        {% if group not in item.assigned_groups %}
+                                                        {% if group.name not in item.assigned_group_names %}
                                                         <div class="col-md-4 mb-2">
                                                             <div class="card border group-select-card" 
                                                                  style="cursor: pointer; transition: all 0.2s;"

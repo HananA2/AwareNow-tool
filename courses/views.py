@@ -4,11 +4,16 @@ from django.contrib import messages
 from django.utils import timezone
 from django.http import HttpResponseForbidden
 from django.db.models import Avg, Count, Q
-# Remove: from datetime import datetime, timedelta  # Don't need datetime anymore
 
+import json
+from django.utils import timezone
+from django.db.models import Max
+
+# Remove: from datetime import datetime, timedelta  # Don't need datetime anymore
 from account.models import Company, EmployeeProfile
 from courses.models import Course, CourseCategory, CompanyCourseAssignment, EmployeeCourseAssignment, QuizAttempt
 from courses.forms import CourseForm
+from django.http import JsonResponse
 
 
 # ==================== PERMISSION CHECK ====================
@@ -151,67 +156,153 @@ def platform_admin_dashboard(request):
 @login_required
 @platform_admin_required
 def create_course(request):
-    # Get all existing courses for the table (only when not in edit mode)
-    courses = Course.objects.all().order_by('-created_at')  # Show newest first
-    
+    courses = Course.objects.all().order_by('-created_at')
+
+    today = timezone.now().date()
+    all_companies = Company.objects.filter(
+        license_end_date__gte=today
+    ).order_by('name')
+
     if request.method == 'POST':
         form = CourseForm(request.POST, request.FILES)
+
         if form.is_valid():
             course = form.save(commit=False)
             course.created_by = request.user
-            
-            if course.is_published and not course.published_at:
+            visibility = request.POST.get('visibility')
+
+            # Draft
+            if visibility == 'private':
+                course.is_published = False
+                course.is_active = True
+                course.published_at = None
+
+            # Published
+            elif visibility in ['global', 'specific']:
+                course.is_published = True
+                course.is_active = True
                 course.published_at = timezone.now()
-            
+
+            course.points_reward = 100
+            course.visibility = visibility
             course.save()
+
+            # ✅ NEW: assignment logic
+            today = timezone.now().date()
+            if visibility == 'global':
+                companies = Company.objects.filter(status='ACTIVE', license_end_date__gte=today)
+                for company in companies:
+                    CompanyCourseAssignment.objects.get_or_create(
+                        company=company,
+                        course=course,
+                        defaults={'assigned_by': request.user}
+                    )
+
+            elif visibility == 'specific':
+                company_ids = request.POST.getlist('companies')  
+                companies = Company.objects.filter(
+                    id__in=company_ids,
+                    status='ACTIVE',
+                    license_end_date__gte=today
+                )
+                for company in companies:
+                    CompanyCourseAssignment.objects.get_or_create(
+                        company=company,
+                        course=course,
+                        defaults={'assigned_by': request.user}
+                    )
+
             messages.success(request, f'✅ Course "{course.title}" created!')
-            
-            if 'save_and_assign' in request.POST:
-                return redirect('courses:assign_course_to_companies', course_id=course.id)
-            else:
-                return redirect('courses:platform_admin_dashboard')
+
+            # ➜ Specific companies → assign step
+            # if visibility == 'specific':
+            #     return redirect(
+            #         'courses:assign_course_to_companies',
+            #         course_id=course.id
+            #     )
+
+            return redirect('courses:courses_dashboard')
+
     else:
         form = CourseForm()
-    
-    # Render with all necessary context
+
     return render(request, 'courses/create_course.html', {
         'form': form,
-        'courses': courses,  # For the courses table
-        'is_edit': False,    # Important: tells template this is create mode
+        'is_edit': False,
+        'all_companies': all_companies,
     })
 
 # ==================== COURSE EDITING ====================
 @login_required
 @platform_admin_required
 def edit_course(request, course_id):
-    try:
-        course = Course.objects.get(id=course_id)
-    except Course.DoesNotExist:
-        messages.error(request, '❌ Course not found.')
-        return redirect('courses:platform_admin_dashboard')
+    course = get_object_or_404(Course, id=course_id)
     
+    today = timezone.now().date()
+
+    all_companies = Company.objects.filter(
+        license_end_date__gte=today
+    ).order_by('name')
+
     if request.method == 'POST':
         form = CourseForm(request.POST, request.FILES, instance=course)
+
         if form.is_valid():
             updated_course = form.save(commit=False)
-            
-            # Handle publish date
-            if updated_course.is_published and not updated_course.published_at:
-                updated_course.published_at = timezone.now()
-            
+
+            visibility = request.POST.get('visibility')
+
+            # 🚫 ممنوع الرجوع Draft إذا كان Published
+            if course.is_published and visibility == 'private':
+                messages.error(request, "❌ You cannot move a published course back to draft.")
+                return redirect('courses:courses_dashboard')
+
+            if visibility == 'private':
+                updated_course.is_published = False
+                updated_course.published_at = None
+
+            elif visibility in ['global', 'specific']:
+                updated_course.is_published = True
+                if not updated_course.published_at:
+                    updated_course.published_at = timezone.now()
+
             updated_course.save()
+
             messages.success(request, f'✅ Course "{updated_course.title}" updated!')
-            return redirect('courses:platform_admin_dashboard')
+            return redirect('courses:courses_dashboard')
+
     else:
         form = CourseForm(instance=course)
-    
-    # Render edit template
+
     return render(request, 'courses/create_course.html', {
         'form': form,
-        'course': course,    # Current course being edited
-        'is_edit': True,     # Important: tells template this is edit mode
-        # Don't need 'courses' in edit mode since table won't show
+        'course': course,
+        'is_edit': True,
+        'all_companies': all_companies,
     })
+
+@login_required
+@platform_admin_required
+def deactivate_course(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
+
+    course.is_active = False
+    course.save()
+
+    messages.success(request, f'Course "{course.title}" deactivated.')
+    return redirect('courses:courses_dashboard')
+
+
+@login_required
+@platform_admin_required
+def activate_course(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
+
+    course.is_active = True
+    course.save()
+
+    messages.success(request, f'Course "{course.title}" activated.')
+    return redirect('courses:courses_dashboard')
 
 @login_required
 @platform_admin_required
@@ -243,45 +334,65 @@ def courses_dashboard(request):
     })
 
 # ==================== COURSE ASSIGNMENT ====================
+# @login_required
+# @platform_admin_required
+# def assign_course_to_companies(request, course_id):
+#     course = get_object_or_404(Course, id=course_id)
+    
+#     if request.method == 'POST':
+#         company_ids = request.POST.getlist('companies')
+#         assigned_count = 0
+        
+#         for company_id in company_ids:
+#             try:
+#                 company = Company.objects.get(id=company_id, status='ACTIVE')
+                
+#                 if not CompanyCourseAssignment.objects.filter(
+#                     company=company, course=course
+#                 ).exists():
+#                     CompanyCourseAssignment.objects.create(
+#                         company=company,
+#                         course=course,
+#                         assigned_by=request.user
+#                     )
+#                     assigned_count += 1
+                    
+#             except Company.DoesNotExist:
+#                 continue
+        
+#         if assigned_count > 0:
+#             messages.success(request, f'✅ Course assigned to {assigned_count} company(s)')
+#         else:
+#             messages.info(request, 'No new companies assigned.')
+        
+#         return redirect('courses:platform_admin_dashboard')
+    
+#     all_companies = Company.objects.filter(status='ACTIVE').order_by('name')
+#     already_assigned = course.companies.values_list('id', flat=True)
+    
+#     return render(request, 'courses/assign_course.html', {
+#         'course': course,
+#         'all_companies': all_companies,
+#         'already_assigned': list(already_assigned),
+#         # REMOVED: 'user': request.user,  # Not needed
+#     })
+
+# from django.http import JsonResponse
+
 @login_required
 @platform_admin_required
-def assign_course_to_companies(request, course_id):
+def course_companies_view(request, course_id):
     course = get_object_or_404(Course, id=course_id)
-    
-    if request.method == 'POST':
-        company_ids = request.POST.getlist('companies')
-        assigned_count = 0
-        
-        for company_id in company_ids:
-            try:
-                company = Company.objects.get(id=company_id, status='ACTIVE')
-                
-                if not CompanyCourseAssignment.objects.filter(
-                    company=company, course=course
-                ).exists():
-                    CompanyCourseAssignment.objects.create(
-                        company=company,
-                        course=course,
-                        assigned_by=request.user
-                    )
-                    assigned_count += 1
-                    
-            except Company.DoesNotExist:
-                continue
-        
-        if assigned_count > 0:
-            messages.success(request, f'✅ Course assigned to {assigned_count} company(s)')
-        else:
-            messages.info(request, 'No new companies assigned.')
-        
-        return redirect('courses:platform_admin_dashboard')
-    
-    all_companies = Company.objects.filter(status='ACTIVE').order_by('name')
-    already_assigned = course.companies.values_list('id', flat=True)
-    
-    return render(request, 'courses/assign_course.html', {
-        'course': course,
-        'all_companies': all_companies,
-        'already_assigned': list(already_assigned),
-        # REMOVED: 'user': request.user,  # Not needed
+
+
+    today = timezone.now().date()
+
+    companies = list(
+        course.companies.filter(
+            license_end_date__gte=today
+        ).values_list('name', flat=True)
+    )
+
+    return JsonResponse({
+        'companies': companies
     })
